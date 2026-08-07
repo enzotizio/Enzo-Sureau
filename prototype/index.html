@@ -59,9 +59,10 @@
   #room-backdrop svg { width: 100%; height: 100%; display: block; }
 
   .aura {
-    position: absolute; z-index: 1; width: 260px; height: 260px; border-radius: 50%;
+    position: absolute; z-index: 1; left: 50%; bottom: 8px; width: 260px; height: 260px;
+    margin-left: -130px; border-radius: 50%;
     background: radial-gradient(circle, rgba(255,201,60,.35), transparent 70%);
-    opacity: 0; transition: opacity .4s ease; pointer-events: none;
+    opacity: 0; transition: opacity .4s ease, left .05s linear; pointer-events: none;
   }
   .aura.on { opacity: 1; animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
@@ -110,31 +111,34 @@
     100% { opacity: 0; transform: translate(-50%, -10px); }
   }
 
-  #minigame {
-    padding: 18px 20px 26px; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  .stats-bar {
+    padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
     border-top: 1px solid var(--panel-line); background: var(--bg-1);
+    font-size: 12px; color: var(--text-dim);
   }
-  .stats-row { width: 100%; display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); }
-  .beat-zone { position: relative; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; }
-  .ring-outer {
-    position: absolute; width: 150px; height: 150px; border-radius: 50%;
-    border: 3px dashed var(--panel-line);
-  }
-  .ring-target {
-    position: absolute; width: 78px; height: 78px; border-radius: 50%;
-    border: 3px solid var(--accent-2); opacity: .6;
-  }
-  #tap-btn {
-    position: relative; width: 132px; height: 132px; border-radius: 50%; border: none; cursor: pointer;
-    background: radial-gradient(circle at 35% 30%, #ff8b8b, var(--accent));
-    color: white; font-weight: 800; font-size: 15px; letter-spacing: .04em;
-    box-shadow: 0 10px 26px rgba(255,95,109,.45), inset 0 -6px 12px rgba(0,0,0,.25);
-    transition: transform .08s ease;
-  }
-  #tap-btn:active { transform: scale(.9); }
+  .stats-bar .stats-values { display: flex; gap: 14px; }
   #reset-btn {
-    margin-top: 4px; background: none; border: 1px solid var(--panel-line); color: var(--text-dim);
-    font-size: 11px; padding: 6px 12px; border-radius: 999px; cursor: pointer;
+    background: none; border: 1px solid var(--panel-line); color: var(--text-dim);
+    font-size: 11px; padding: 5px 10px; border-radius: 999px; cursor: pointer; flex-shrink: 0;
+  }
+
+  .machine-hotspot {
+    position: absolute; z-index: 4; cursor: pointer; border-radius: 14px;
+    box-shadow: 0 0 0 0 rgba(255,201,60,0); transition: box-shadow .3s ease;
+  }
+  .machine-hotspot.near { box-shadow: 0 0 0 5px rgba(255,201,60,.4); }
+
+  .machine-ring {
+    position: absolute; z-index: 6; width: 64px; height: 64px; margin-left: -32px; margin-top: -32px;
+    opacity: 0; transition: opacity .25s ease; pointer-events: none;
+  }
+  .machine-ring.show { opacity: 1; }
+  .ring-outer-m {
+    position: absolute; inset: 0; border-radius: 50%; border: 3px dashed rgba(255,255,255,.55);
+  }
+  .ring-target-m {
+    position: absolute; top: 50%; left: 50%; width: 34px; height: 34px; border-radius: 50%;
+    border: 3px solid var(--accent-2); opacity: .85; transform: translate(-50%, -50%) scale(1);
   }
 </style>
 </head>
@@ -163,19 +167,18 @@
         <svg id="char-svg" viewBox="0 0 280 260"></svg>
       </div>
     </div>
+    <div class="machine-ring" id="machine-ring">
+      <div class="ring-outer-m"></div>
+      <div class="ring-target-m"></div>
+    </div>
   </div>
 
-  <div id="minigame">
-    <div class="stats-row">
+  <div class="stats-bar">
+    <div class="stats-values">
       <span id="reps-label">0 répétitions</span>
       <span id="best-label">Meilleur combo: 0</span>
     </div>
-    <div class="beat-zone">
-      <div class="ring-outer"></div>
-      <div class="ring-target"></div>
-      <button id="tap-btn">S'ENTRAÎNER</button>
-    </div>
-    <button id="reset-btn">Réinitialiser la progression</button>
+    <button id="reset-btn">Réinitialiser</button>
   </div>
 </div>
 
@@ -224,7 +227,7 @@
     aura: document.getElementById("aura"),
     crack: document.getElementById("floor-crack"),
     toast: document.getElementById("toast"),
-    tapBtn: document.getElementById("tap-btn"),
+    machineRing: document.getElementById("machine-ring"),
     resetBtn: document.getElementById("reset-btn"),
   };
 
@@ -291,20 +294,24 @@
         <circle cx="350" cy="158" r="9" fill="${OUTLINE}"/>
       </g>
 
-      <rect x="252" y="330" width="14" height="120" fill="#8a5a3a"/>
-      <rect x="242" y="330" width="94" height="14" rx="4" fill="#8a5a3a"/>
-      <rect x="242" y="384" width="94" height="14" rx="4" fill="#8a5a3a"/>
-      <g stroke-width="4">
-        <rect x="248" y="345" width="18" height="16" rx="4" fill="#e0473b"/>
-        <rect x="272" y="345" width="18" height="16" rx="4" fill="#3d7fd6"/>
-        <rect x="296" y="345" width="18" height="16" rx="4" fill="#4bbf7a"/>
-        <rect x="320" y="345" width="18" height="16" rx="4" fill="#ffd23f"/>
+      <g id="machine-rack">
+        <rect x="252" y="330" width="14" height="120" fill="#8a5a3a"/>
+        <rect x="242" y="330" width="94" height="14" rx="4" fill="#8a5a3a"/>
+        <rect x="242" y="384" width="94" height="14" rx="4" fill="#8a5a3a"/>
+        <g stroke-width="4">
+          <rect x="248" y="345" width="18" height="16" rx="4" fill="#e0473b"/>
+          <rect x="272" y="345" width="18" height="16" rx="4" fill="#3d7fd6"/>
+          <rect x="296" y="345" width="18" height="16" rx="4" fill="#4bbf7a"/>
+          <rect x="320" y="345" width="18" height="16" rx="4" fill="#ffd23f"/>
+        </g>
       </g>
 
-      <rect x="42" y="380" width="10" height="70" fill="#5c5c5c"/>
-      <ellipse cx="47" cy="384" rx="26" ry="9" fill="#e0473b"/>
-      <ellipse cx="47" cy="398" rx="22" ry="7" fill="#3d7fd6"/>
-      <ellipse cx="47" cy="410" rx="18" ry="6" fill="#ffd23f"/>
+      <g id="machine-weights">
+        <rect x="42" y="380" width="10" height="70" fill="#5c5c5c"/>
+        <ellipse cx="47" cy="384" rx="26" ry="9" fill="#e0473b"/>
+        <ellipse cx="47" cy="398" rx="22" ry="7" fill="#3d7fd6"/>
+        <ellipse cx="47" cy="410" rx="18" ry="6" fill="#ffd23f"/>
+      </g>
 
       <line x1="356" y1="60" x2="356" y2="150" stroke="#5c5c5c" stroke-width="4"/>
       <rect x="336" y="150" width="40" height="86" rx="18" fill="#d8564a"/>
@@ -332,18 +339,22 @@
         <line x1="364" y1="132" x2="370" y2="132"/>
       </g>
 
-      <rect x="252" y="330" width="14" height="120" fill="#aab7bf"/>
-      <rect x="242" y="330" width="94" height="14" rx="4" fill="#aab7bf"/>
-      <rect x="242" y="384" width="94" height="14" rx="4" fill="#aab7bf"/>
-      <g stroke-width="4">
-        <g fill="#2f4f7a"><rect x="247" y="344" width="20" height="18" rx="5"/><rect x="271" y="344" width="20" height="18" rx="5"/><rect x="295" y="344" width="20" height="18" rx="5"/><rect x="319" y="344" width="20" height="18" rx="5"/></g>
-        <g fill="#ffffff" stroke-width="3"><circle cx="252" cy="353" r="5"/><circle cx="262" cy="353" r="5"/><circle cx="276" cy="353" r="5"/><circle cx="286" cy="353" r="5"/><circle cx="300" cy="353" r="5"/><circle cx="310" cy="353" r="5"/><circle cx="324" cy="353" r="5"/><circle cx="334" cy="353" r="5"/></g>
+      <g id="machine-rack">
+        <rect x="252" y="330" width="14" height="120" fill="#aab7bf"/>
+        <rect x="242" y="330" width="94" height="14" rx="4" fill="#aab7bf"/>
+        <rect x="242" y="384" width="94" height="14" rx="4" fill="#aab7bf"/>
+        <g stroke-width="4">
+          <g fill="#2f4f7a"><rect x="247" y="344" width="20" height="18" rx="5"/><rect x="271" y="344" width="20" height="18" rx="5"/><rect x="295" y="344" width="20" height="18" rx="5"/><rect x="319" y="344" width="20" height="18" rx="5"/></g>
+          <g fill="#ffffff" stroke-width="3"><circle cx="252" cy="353" r="5"/><circle cx="262" cy="353" r="5"/><circle cx="276" cy="353" r="5"/><circle cx="286" cy="353" r="5"/><circle cx="300" cy="353" r="5"/><circle cx="310" cy="353" r="5"/><circle cx="324" cy="353" r="5"/><circle cx="334" cy="353" r="5"/></g>
+        </g>
       </g>
 
-      <rect x="42" y="392" width="12" height="58" fill="#aab7bf"/>
-      <ellipse cx="48" cy="396" rx="28" ry="8" fill="#dfe6ea"/>
-      <ellipse cx="48" cy="410" rx="24" ry="7" fill="#c3ccd2"/>
-      <ellipse cx="48" cy="422" rx="20" ry="6" fill="#eef2f5"/>
+      <g id="machine-weights">
+        <rect x="42" y="392" width="12" height="58" fill="#aab7bf"/>
+        <ellipse cx="48" cy="396" rx="28" ry="8" fill="#dfe6ea"/>
+        <ellipse cx="48" cy="410" rx="24" ry="7" fill="#c3ccd2"/>
+        <ellipse cx="48" cy="422" rx="20" ry="6" fill="#eef2f5"/>
+      </g>
 
       <path d="M348 372 Q340 345 358 330 Q376 345 366 372 Z" fill="#4bbf7a"/>
       <path d="M348 372 Q345 350 358 336" stroke="#2f8a54" stroke-width="3" fill="none"/>
@@ -364,7 +375,12 @@
     const swap = () => {
       if (builder) {
         el.roomSvg.innerHTML = builder();
-        requestAnimationFrame(() => el.roomBackdrop.classList.add("show"));
+        requestAnimationFrame(() => {
+          el.roomBackdrop.classList.add("show");
+          layoutMachineHotspots();
+        });
+      } else {
+        layoutMachineHotspots();
       }
       currentRoomTier = tier;
     };
@@ -534,13 +550,13 @@
     el.toast.classList.add("show");
   }
 
-  function floatText(text, color) {
+  function floatText(text, color, xPercent) {
     const f = document.createElement("div");
     f.className = "floater";
     f.textContent = text;
     f.style.color = color;
-    f.style.left = (46 + Math.random() * 8) + "%";
-    f.style.bottom = "40%";
+    f.style.left = (xPercent != null ? xPercent - 4 : 46) + "%";
+    f.style.bottom = "42%";
     el.stage.appendChild(f);
     setTimeout(() => f.remove(), 1000);
   }
@@ -574,18 +590,7 @@
     return 0.45 + 0.85 * (0.5 - 0.5 * Math.cos(phase * Math.PI * 2));
   }
 
-  function tick(now) {
-    const s = beatScale(now);
-    document.querySelector(".ring-target").style.transform = `translate(-50%,-50%) scale(${s})`;
-    requestAnimationFrame(tick);
-  }
-  const ringTarget = document.querySelector(".ring-target");
-  ringTarget.style.position = "absolute";
-  ringTarget.style.top = "50%";
-  ringTarget.style.left = "50%";
-  requestAnimationFrame(tick);
-
-  el.tapBtn.addEventListener("click", () => {
+  function trainAt(xPercent) {
     const now = performance.now();
     const s = beatScale(now);
     const diff = Math.abs(s - 1);
@@ -597,9 +602,9 @@
     else { grade = "Raté"; xp = 5; color = "var(--bad)"; state.combo = 0; }
 
     state.bestCombo = Math.max(state.bestCombo, state.combo);
-    floatText(grade + "  +" + xp + " XP", color);
+    floatText(grade + "  +" + xp + " XP", color, xPercent);
     gainXp(xp);
-  });
+  }
 
   el.resetBtn.addEventListener("click", () => {
     if (!confirm("Réinitialiser toute la progression ?")) return;
@@ -608,8 +613,60 @@
     render(false);
   });
 
-  const MOVE_MIN_X = 10, MOVE_MAX_X = 90, MOVE_SPEED = 38;
+  const MOVE_MIN_X = 10, MOVE_MAX_X = 90, MOVE_SPEED = 38, PROXIMITY = 8;
   const move = { x: 50, target: 50, lastTs: null };
+  let pendingTrainId = null;
+  let machineList = [];
+  const machineHotspots = {};
+  const MACHINE_IDS = ["machine-rack", "machine-weights"];
+
+  function layoutMachineHotspots() {
+    const stageRect = el.stage.getBoundingClientRect();
+    if (!stageRect.width) return;
+    machineList = [];
+    MACHINE_IDS.forEach((id) => {
+      const svgEl = document.getElementById(id);
+      let hotspot = machineHotspots[id];
+      if (!svgEl) {
+        if (hotspot) hotspot.el.style.display = "none";
+        return;
+      }
+      const r = svgEl.getBoundingClientRect();
+      if (!hotspot) {
+        const div = document.createElement("div");
+        div.className = "machine-hotspot";
+        div.addEventListener("click", (e) => {
+          e.stopPropagation();
+          onMachineClick(id);
+        });
+        el.stage.appendChild(div);
+        hotspot = machineHotspots[id] = { el: div };
+      }
+      const leftPx = r.left - stageRect.left;
+      const topPx = r.top - stageRect.top;
+      const xPercent = ((leftPx + r.width / 2) / stageRect.width) * 100;
+      hotspot.xPercent = xPercent;
+      hotspot.topPx = topPx;
+      hotspot.cxPx = leftPx + r.width / 2;
+      hotspot.el.style.display = "block";
+      hotspot.el.style.left = leftPx + "px";
+      hotspot.el.style.top = topPx + "px";
+      hotspot.el.style.width = r.width + "px";
+      hotspot.el.style.height = r.height + "px";
+      machineList.push({ id, xPercent, topPx: hotspot.topPx, cxPx: hotspot.cxPx });
+    });
+  }
+
+  function onMachineClick(id) {
+    const m = machineList.find((x) => x.id === id);
+    if (!m) return;
+    if (Math.abs(move.x - m.xPercent) <= PROXIMITY) {
+      trainAt(m.xPercent);
+    } else {
+      move.target = Math.max(MOVE_MIN_X, Math.min(MOVE_MAX_X, m.xPercent));
+      pendingTrainId = id;
+    }
+  }
 
   function stepMovement(ts) {
     if (move.lastTs == null) move.lastTs = ts;
@@ -627,6 +684,30 @@
     }
     el.charPos.style.left = move.x + "%";
     el.charPos.style.transform = `translateX(-50%) rotate(${tilt}deg)`;
+    el.aura.style.left = move.x + "%";
+
+    let nearest = null, nearestDist = Infinity;
+    machineList.forEach((m) => {
+      const d = Math.abs(move.x - m.xPercent);
+      if (d < nearestDist) { nearestDist = d; nearest = m; }
+    });
+    machineList.forEach((m) => {
+      const hotspot = machineHotspots[m.id];
+      if (hotspot) hotspot.el.classList.toggle("near", m === nearest && nearestDist <= PROXIMITY);
+    });
+    if (nearest && nearestDist <= PROXIMITY) {
+      el.machineRing.classList.add("show");
+      el.machineRing.style.left = nearest.cxPx + "px";
+      el.machineRing.style.top = (nearest.topPx - 4) + "px";
+      el.machineRing.querySelector(".ring-target-m").style.transform = `translate(-50%,-50%) scale(${beatScale(ts)})`;
+      if (pendingTrainId === nearest.id && dist <= 0.25) {
+        trainAt(nearest.xPercent);
+        pendingTrainId = null;
+      }
+    } else {
+      el.machineRing.classList.remove("show");
+    }
+
     requestAnimationFrame(stepMovement);
   }
   requestAnimationFrame(stepMovement);
@@ -644,8 +725,11 @@
     const rect = el.stage.getBoundingClientRect();
     const pct = ((e.clientX - rect.left) / rect.width) * 100;
     move.target = Math.max(MOVE_MIN_X, Math.min(MOVE_MAX_X, pct));
+    pendingTrainId = null;
     showTapMarker(e.clientX - rect.left, e.clientY - rect.top);
   });
+
+  window.addEventListener("resize", layoutMachineHotspots);
 
   render(false);
 })();
