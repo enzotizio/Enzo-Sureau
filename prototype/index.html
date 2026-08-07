@@ -705,25 +705,19 @@
     save();
   }
 
-  const BEAT_PERIOD = 1100;
-  let beatStart = performance.now();
+  const TRAIN_DURATION = 2500;
 
-  function beatScale(now) {
-    const phase = ((now - beatStart) % BEAT_PERIOD) / BEAT_PERIOD;
-    return 0.45 + 0.85 * (0.5 - 0.5 * Math.cos(phase * Math.PI * 2));
+  function randomGrade() {
+    const xp = 8 + Math.floor(Math.random() * 23);
+    if (xp >= 22) return { grade: "PARFAIT !", xp, color: "var(--good)" };
+    if (xp >= 14) return { grade: "Bien", xp, color: "var(--mid)" };
+    return { grade: "Bof", xp, color: "var(--bad)" };
   }
 
-  function trainAt(xPercent) {
-    const now = performance.now();
-    const s = beatScale(now);
-    const diff = Math.abs(s - 1);
+  function completeTrainingCycle(xPercent) {
+    const { grade, xp, color } = randomGrade();
     state.reps += 1;
-
-    let grade, xp, color;
-    if (diff < 0.12) { grade = "PARFAIT !"; xp = 30; color = "var(--good)"; state.combo += 1; }
-    else if (diff < 0.32) { grade = "Bien"; xp = 15; color = "var(--mid)"; state.combo += 1; }
-    else { grade = "Raté"; xp = 5; color = "var(--bad)"; state.combo = 0; }
-
+    state.combo += 1;
     state.bestCombo = Math.max(state.bestCombo, state.combo);
     floatText(grade + "  +" + xp + " XP", color, xPercent);
     gainXp(xp);
@@ -738,7 +732,7 @@
 
   const MOVE_MIN_X = 10, MOVE_MAX_X = 90, MOVE_SPEED = 38, PROXIMITY = 8;
   const move = { x: 50, target: 50, lastTs: null };
-  let pendingTrainId = null;
+  let trainCycle = null;
   let machineList = [];
   const machineHotspots = {};
   const MACHINE_IDS = ["machine-rack", "machine-weights"];
@@ -783,12 +777,7 @@
   function onMachineClick(id) {
     const m = machineList.find((x) => x.id === id);
     if (!m) return;
-    if (Math.abs(move.x - m.xPercent) <= PROXIMITY) {
-      trainAt(m.xPercent);
-    } else {
-      move.target = Math.max(MOVE_MIN_X, Math.min(MOVE_MAX_X, m.xPercent));
-      pendingTrainId = id;
-    }
+    move.target = Math.max(MOVE_MIN_X, Math.min(MOVE_MAX_X, m.xPercent));
   }
 
   function stepMovement(ts) {
@@ -819,15 +808,22 @@
       if (hotspot) hotspot.el.classList.toggle("near", m === nearest && nearestDist <= PROXIMITY);
     });
     if (nearest && nearestDist <= PROXIMITY) {
+      if (!trainCycle || trainCycle.machineId !== nearest.id) {
+        trainCycle = { machineId: nearest.id, startTs: ts };
+      }
+      const progress = Math.min(1, (ts - trainCycle.startTs) / TRAIN_DURATION);
       el.machineRing.classList.add("show");
       el.machineRing.style.left = nearest.cxPx + "px";
       el.machineRing.style.top = (nearest.topPx - 4) + "px";
-      el.machineRing.querySelector(".ring-target-m").style.transform = `translate(-50%,-50%) scale(${beatScale(ts)})`;
-      if (pendingTrainId === nearest.id && dist <= 0.25) {
-        trainAt(nearest.xPercent);
-        pendingTrainId = null;
+      el.machineRing.querySelector(".ring-target-m").style.transform = `translate(-50%,-50%) scale(${0.35 + 0.65 * progress})`;
+      el.machineRing.querySelector(".ring-outer-m").style.opacity = 0.4 + 0.5 * progress;
+      if (progress >= 1) {
+        completeTrainingCycle(nearest.xPercent);
+        trainCycle.startTs = ts;
       }
     } else {
+      if (trainCycle) state.combo = 0;
+      trainCycle = null;
       el.machineRing.classList.remove("show");
     }
 
@@ -848,7 +844,6 @@
     const rect = el.stage.getBoundingClientRect();
     const pct = ((e.clientX - rect.left) / rect.width) * 100;
     move.target = Math.max(MOVE_MIN_X, Math.min(MOVE_MAX_X, pct));
-    pendingTrainId = null;
     showTapMarker(e.clientX - rect.left, e.clientY - rect.top);
   });
 
