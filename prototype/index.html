@@ -249,6 +249,15 @@
   ];
   const TIER_END = [20, 40, 70, 100, 160];
 
+  function zokauMark(x, y, w, h, bg, fg, dot, rotate) {
+    const fontSize = h * 0.46;
+    return `<g transform="rotate(${rotate || 0} ${x + w / 2} ${y + h / 2})">
+      <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h * 0.18}" fill="${bg}" stroke="${OUTLINE}" stroke-width="4"/>
+      <circle cx="${x + h * 0.5}" cy="${y + h / 2}" r="${h * 0.16}" fill="${dot}"/>
+      <text x="${x + w / 2 + h * 0.12}" y="${y + h / 2 + fontSize * 0.35}" font-family="Arial, sans-serif" font-weight="900" font-size="${fontSize}" fill="${fg}" text-anchor="middle" letter-spacing="1.5">ZOKAU</text>
+    </g>`;
+  }
+
   function roomShell(id, wallUpper, wallLower, trim, tileA, tileB, baseboard, spotColor, spotOpacity, matColor, decorSvg, floorPatternInner, floorTileSize, extraDefs) {
     const tileSize = floorTileSize || 50;
     const floorInner = floorPatternInner || `
@@ -290,13 +299,13 @@
       <path d="M55 90 L120 200 M120 90 L60 190" stroke="#9fd2de" stroke-width="4" fill="none"/>
       <path d="M80 78 L104 78" stroke="#d8564a" stroke-width="8" stroke-linecap="round"/>
 
-      <rect x="298" y="86" width="76" height="104" rx="6" fill="#ffd23f" transform="rotate(-4 336 138)"/>
-      <g transform="rotate(-4 336 138)">
-        <circle cx="336" cy="100" r="5" fill="#e0473b"/>
-        <text x="336" y="128" font-family="Arial, sans-serif" font-weight="900" font-size="17" fill="${OUTLINE}" text-anchor="middle" letter-spacing="1">ZOKAU</text>
+      <rect x="270" y="86" width="76" height="104" rx="6" fill="#ffd23f" transform="rotate(-4 308 138)"/>
+      <g transform="rotate(-4 308 138)">
+        <circle cx="308" cy="100" r="5" fill="#e0473b"/>
+        <text x="308" y="130" font-family="Arial, sans-serif" font-weight="900" font-size="21" fill="${OUTLINE}" text-anchor="middle" letter-spacing="1">ZOKAU</text>
+        <circle cx="294" cy="158" r="9" fill="${OUTLINE}"/>
+        <rect x="289" y="150" width="10" height="26" rx="3" fill="${OUTLINE}"/>
         <circle cx="322" cy="158" r="9" fill="${OUTLINE}"/>
-        <rect x="317" y="150" width="10" height="26" rx="3" fill="${OUTLINE}"/>
-        <circle cx="350" cy="158" r="9" fill="${OUTLINE}"/>
       </g>
 
       <g id="machine-rack">
@@ -343,6 +352,8 @@
         <line x1="302" y1="132" x2="308" y2="132"/>
         <line x1="364" y1="132" x2="370" y2="132"/>
       </g>
+
+      ${zokauMark(174, 108, 128, 46, "#ffffff", "#2f4f7a", "#e0473b", 0)}
 
       <g id="machine-rack">
         <rect x="252" y="330" width="14" height="120" fill="#aab7bf"/>
@@ -391,6 +402,9 @@
         <path d="M290 84 h56 M318 84 v50 M290 134 h56" stroke="#ff3fa4" stroke-width="4"/>
         <circle cx="290" cy="84" r="8" stroke="#3fe8ff" stroke-width="4"/>
         <circle cx="346" cy="84" r="8" stroke="#3fe8ff" stroke-width="4"/>
+      </g>
+      <g filter="url(#neon-glow-2)">
+        <text x="212" y="130" font-family="Arial, sans-serif" font-weight="900" font-size="30" fill="none" stroke="#ffd23f" stroke-width="2" text-anchor="middle" letter-spacing="2">ZOKAU</text>
       </g>
 
       <g id="machine-rack">
@@ -450,6 +464,8 @@
       <path d="M50 82 L128 96 M46 150 L100 220" stroke="#7d9aa3" stroke-width="4" fill="none" transform="rotate(-3 90 146)"/>
       <path d="M120 74 L138 116 L110 100 Z" fill="#9a9691" transform="rotate(-3 90 146)"/>
       <path d="M62 76 L100 76" stroke="#d8564a" stroke-width="7" stroke-linecap="round" transform="rotate(-3 90 146)"/>
+
+      ${zokauMark(254, 108, 106, 42, "#ffd23f", "#1c1a17", "#e0473b", -10)}
 
       <g id="machine-rack" transform="rotate(9 299 390)">
         <rect x="252" y="330" width="14" height="120" fill="#7a5638"/>
@@ -514,6 +530,8 @@
         <path d="M200 34 l7 15 16 2 -12 11 3 16 -14 -8 -14 8 3 -16 -12 -11 16 -2 z" fill="#fff3c4"/>
       </g>
       <text x="200" y="86" font-family="Arial, sans-serif" font-weight="900" font-size="19" fill="${OUTLINE}" text-anchor="middle" letter-spacing="2">LÉGENDE</text>
+
+      ${zokauMark(146, 140, 108, 44, "#3a2e6e", "#ffd700", "#ff3fa4", 0)}
 
       <g opacity=".9">
         <rect x="18" y="40" width="10" height="16" fill="#ff3fa4" transform="rotate(20 23 48)"/>
