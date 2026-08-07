@@ -75,6 +75,13 @@
   #char-svg { width: 220px; height: auto; display: block; overflow: visible; }
   #char-wrap.bump { animation: bump .45s cubic-bezier(.34,1.56,.64,1); }
   @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.22,.85); } 70% { transform: scale(.92,1.1); } 100% { transform: scale(1); } }
+  #char-wrap.flex { animation: flexPulse .25s ease-out; }
+  @keyframes flexPulse {
+    0% { transform: scale(1) rotate(0deg); }
+    35% { transform: scale(1.1, .92) rotate(-3deg); }
+    70% { transform: scale(.96, 1.05) rotate(2deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
 
   .tap-marker {
     position: absolute; width: 26px; height: 26px; margin-left: -13px; margin-top: -13px;
@@ -815,6 +822,10 @@
     void el.machineRing.offsetWidth;
     el.machineRing.classList.add("pop");
     setTimeout(() => el.machineRing.classList.remove("pop"), 300);
+
+    el.charWrap.classList.remove("flex");
+    void el.charWrap.offsetWidth;
+    el.charWrap.classList.add("flex");
   }
 
   el.resetBtn.addEventListener("click", () => {
