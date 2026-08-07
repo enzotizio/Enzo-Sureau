@@ -140,6 +140,16 @@
     position: absolute; top: 50%; left: 50%; width: 34px; height: 34px; border-radius: 50%;
     border: 3px solid var(--accent-2); opacity: .85; transform: translate(-50%, -50%) scale(1);
   }
+  .machine-ring.show .ring-target-m { animation: ringPulse 1.2s ease-in-out infinite; }
+  @keyframes ringPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(.85); }
+    50% { transform: translate(-50%, -50%) scale(1.05); }
+  }
+  .machine-ring.pop .ring-target-m { animation: ringPop .3s ease; }
+  @keyframes ringPop {
+    0% { transform: translate(-50%, -50%) scale(1.4); }
+    100% { transform: translate(-50%, -50%) scale(.85); }
+  }
 </style>
 </head>
 <body>
@@ -787,8 +797,6 @@
     save();
   }
 
-  const TRAIN_DURATION = 2500;
-
   function randomGrade() {
     const xp = 8 + Math.floor(Math.random() * 23);
     if (xp >= 22) return { grade: "PARFAIT !", xp, color: "var(--good)" };
@@ -796,13 +804,17 @@
     return { grade: "Bof", xp, color: "var(--bad)" };
   }
 
-  function completeTrainingCycle(xPercent) {
+  function trainAt(xPercent) {
     const { grade, xp, color } = randomGrade();
     state.reps += 1;
     state.combo += 1;
     state.bestCombo = Math.max(state.bestCombo, state.combo);
     floatText(grade + "  +" + xp + " XP", color, xPercent);
     gainXp(xp);
+    el.machineRing.classList.remove("pop");
+    void el.machineRing.offsetWidth;
+    el.machineRing.classList.add("pop");
+    setTimeout(() => el.machineRing.classList.remove("pop"), 300);
   }
 
   el.resetBtn.addEventListener("click", () => {
@@ -814,7 +826,8 @@
 
   const MOVE_MIN_X = 10, MOVE_MAX_X = 90, MOVE_SPEED = 38, PROXIMITY = 8;
   const move = { x: 50, target: 50, lastTs: null };
-  let trainCycle = null;
+  let pendingTrainId = null;
+  let wasNearMachine = false;
   let machineList = [];
   const machineHotspots = {};
   const MACHINE_IDS = ["machine-rack", "machine-weights"];
@@ -859,7 +872,12 @@
   function onMachineClick(id) {
     const m = machineList.find((x) => x.id === id);
     if (!m) return;
-    move.target = Math.max(MOVE_MIN_X, Math.min(MOVE_MAX_X, m.xPercent));
+    if (Math.abs(move.x - m.xPercent) <= PROXIMITY) {
+      trainAt(m.xPercent);
+    } else {
+      move.target = Math.max(MOVE_MIN_X, Math.min(MOVE_MAX_X, m.xPercent));
+      pendingTrainId = id;
+    }
   }
 
   function stepMovement(ts) {
@@ -890,22 +908,17 @@
       if (hotspot) hotspot.el.classList.toggle("near", m === nearest && nearestDist <= PROXIMITY);
     });
     if (nearest && nearestDist <= PROXIMITY) {
-      if (!trainCycle || trainCycle.machineId !== nearest.id) {
-        trainCycle = { machineId: nearest.id, startTs: ts };
-      }
-      const progress = Math.min(1, (ts - trainCycle.startTs) / TRAIN_DURATION);
       el.machineRing.classList.add("show");
       el.machineRing.style.left = nearest.cxPx + "px";
       el.machineRing.style.top = (nearest.topPx - 4) + "px";
-      el.machineRing.querySelector(".ring-target-m").style.transform = `translate(-50%,-50%) scale(${0.35 + 0.65 * progress})`;
-      el.machineRing.querySelector(".ring-outer-m").style.opacity = 0.4 + 0.5 * progress;
-      if (progress >= 1) {
-        completeTrainingCycle(nearest.xPercent);
-        trainCycle.startTs = ts;
+      if (pendingTrainId === nearest.id && dist <= 0.25) {
+        trainAt(nearest.xPercent);
+        pendingTrainId = null;
       }
+      wasNearMachine = true;
     } else {
-      if (trainCycle) state.combo = 0;
-      trainCycle = null;
+      if (wasNearMachine) state.combo = 0;
+      wasNearMachine = false;
       el.machineRing.classList.remove("show");
     }
 
@@ -926,6 +939,7 @@
     const rect = el.stage.getBoundingClientRect();
     const pct = ((e.clientX - rect.left) / rect.width) * 100;
     move.target = Math.max(MOVE_MIN_X, Math.min(MOVE_MAX_X, pct));
+    pendingTrainId = null;
     showTapMarker(e.clientX - rect.left, e.clientY - rect.top);
   });
 
