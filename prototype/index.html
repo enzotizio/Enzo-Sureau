@@ -50,8 +50,7 @@
   .xp-label { font-size: 11px; color: var(--text-dim); text-align: right; }
 
   #stage {
-    flex: 1; position: relative; display: flex; align-items: flex-end; justify-content: center;
-    overflow: hidden;
+    flex: 1; position: relative; overflow: hidden; cursor: pointer;
   }
   #room-backdrop {
     position: absolute; inset: 0; z-index: 0; opacity: 0; transition: opacity .5s ease;
@@ -67,10 +66,21 @@
   .aura.on { opacity: 1; animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 
-  #char-wrap { position: relative; z-index: 2; margin-bottom: 8px; transform-origin: bottom center; }
+  #char-pos {
+    position: absolute; left: 50%; bottom: 8px; z-index: 2;
+    transform: translateX(-50%) rotate(0deg);
+  }
+  #char-wrap { transform-origin: bottom center; }
   #char-svg { width: 220px; height: auto; display: block; overflow: visible; }
   #char-wrap.bump { animation: bump .45s cubic-bezier(.34,1.56,.64,1); }
   @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.22,.85); } 70% { transform: scale(.92,1.1); } 100% { transform: scale(1); } }
+
+  .tap-marker {
+    position: absolute; width: 26px; height: 26px; margin-left: -13px; margin-top: -13px;
+    border: 3px solid var(--accent-2); border-radius: 50%; pointer-events: none; z-index: 5;
+    animation: tapPing .5s ease-out forwards;
+  }
+  @keyframes tapPing { 0% { opacity: .9; transform: scale(.4); } 100% { opacity: 0; transform: scale(1.7); } }
 
   .floor-crack { position: absolute; z-index: 1; bottom: 0; left: 50%; translate: -50% 0; width: 220px; height: 14px;
     opacity: 0; transition: opacity .4s; pointer-events: none; }
@@ -148,8 +158,10 @@
     <svg class="floor-crack" id="floor-crack" viewBox="0 0 220 14">
       <path d="M10 2 L40 10 L60 4 L90 12 L120 3 L150 11 L180 5 L210 9" stroke="#000" stroke-width="2" fill="none" opacity=".5"/>
     </svg>
-    <div id="char-wrap">
-      <svg id="char-svg" viewBox="0 0 280 260"></svg>
+    <div id="char-pos">
+      <div id="char-wrap">
+        <svg id="char-svg" viewBox="0 0 280 260"></svg>
+      </div>
     </div>
   </div>
 
@@ -205,6 +217,7 @@
     bestLabel: document.getElementById("best-label"),
     charSvg: document.getElementById("char-svg"),
     charWrap: document.getElementById("char-wrap"),
+    charPos: document.getElementById("char-pos"),
     stage: document.getElementById("stage"),
     roomBackdrop: document.getElementById("room-backdrop"),
     roomSvg: document.getElementById("room-svg"),
@@ -593,6 +606,45 @@
     state = { level: 1, xp: 0, reps: 0, bestCombo: 0, combo: 0 };
     save();
     render(false);
+  });
+
+  const MOVE_MIN_X = 10, MOVE_MAX_X = 90, MOVE_SPEED = 38;
+  const move = { x: 50, target: 50, lastTs: null };
+
+  function stepMovement(ts) {
+    if (move.lastTs == null) move.lastTs = ts;
+    const dt = Math.min((ts - move.lastTs) / 1000, 0.1);
+    move.lastTs = ts;
+    const diff = move.target - move.x;
+    const dist = Math.abs(diff);
+    let tilt = 0;
+    if (dist > 0.25) {
+      const dir = Math.sign(diff);
+      move.x += dir * Math.min(dist, MOVE_SPEED * dt);
+      tilt = dir * 6;
+    } else {
+      move.x = move.target;
+    }
+    el.charPos.style.left = move.x + "%";
+    el.charPos.style.transform = `translateX(-50%) rotate(${tilt}deg)`;
+    requestAnimationFrame(stepMovement);
+  }
+  requestAnimationFrame(stepMovement);
+
+  function showTapMarker(x, y) {
+    const m = document.createElement("div");
+    m.className = "tap-marker";
+    m.style.left = x + "px";
+    m.style.top = y + "px";
+    el.stage.appendChild(m);
+    setTimeout(() => m.remove(), 500);
+  }
+
+  el.stage.addEventListener("click", (e) => {
+    const rect = el.stage.getBoundingClientRect();
+    const pct = ((e.clientX - rect.left) / rect.width) * 100;
+    move.target = Math.max(MOVE_MIN_X, Math.min(MOVE_MAX_X, pct));
+    showTapMarker(e.clientX - rect.left, e.clientY - rect.top);
   });
 
   render(false);
