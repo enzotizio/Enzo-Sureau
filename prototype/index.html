@@ -176,7 +176,7 @@
     return idx;
   }
   function roomNameForLevel(level) { return ROOMS[tierForLevel(level)].name; }
-  function xpToNext(level) { return Math.round(70 + level * 13); }
+  function xpToNext(level) { return Math.round(6 * level * level + 40 * level + 60); }
 
   const SAVE_KEY = "salle-sport-prototype-save-v1";
   let state = { level: 1, xp: 0, reps: 0, bestCombo: 0, combo: 0 };
