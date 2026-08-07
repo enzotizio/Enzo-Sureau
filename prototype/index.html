@@ -275,6 +275,54 @@
     </g>`;
   }
 
+  function propTreadmill(x, y, deckColor, frameColor) {
+    return `<g>
+      <rect x="${x}" y="${y + 34}" width="80" height="12" rx="4" fill="${frameColor}"/>
+      <path d="M ${x + 6} ${y + 34} L ${x + 20} ${y} L ${x + 70} ${y} L ${x + 74} ${y + 34} Z" fill="${deckColor}"/>
+      <line x1="${x+22}" y1="${y+2}" x2="${x+68}" y2="${y+2}" stroke="${frameColor}" stroke-width="2" opacity=".5"/>
+      <rect x="${x + 40}" y="${y - 34}" width="6" height="34" fill="${frameColor}"/>
+      <rect x="${x + 18}" y="${y - 48}" width="50" height="16" rx="3" fill="${frameColor}"/>
+      <rect x="${x + 22}" y="${y - 45}" width="18" height="10" rx="2" fill="#8fd6ff" opacity=".85"/>
+    </g>`;
+  }
+
+  function propKettlebells(x, y, colorA, colorB) {
+    return `<g stroke-width="3">
+      <circle cx="${x}" cy="${y}" r="13" fill="${colorA}"/>
+      <path d="M ${x-6} ${y-11} Q ${x} ${y-21} ${x+6} ${y-11}" fill="none"/>
+      <circle cx="${x+27}" cy="${y+5}" r="10" fill="${colorB}"/>
+      <path d="M ${x+22} ${y-4} Q ${x+27} ${y-12} ${x+32} ${y-4}" fill="none" stroke-width="2.5"/>
+    </g>`;
+  }
+
+  function propPullBar(xCenter, topY, width, color) {
+    return `<g>
+      <line x1="${xCenter - width / 2 + 8}" y1="0" x2="${xCenter - width / 2 + 8}" y2="${topY}" stroke="#5c5c5c" stroke-width="3"/>
+      <line x1="${xCenter + width / 2 - 8}" y1="0" x2="${xCenter + width / 2 - 8}" y2="${topY}" stroke="#5c5c5c" stroke-width="3"/>
+      <rect x="${xCenter - width / 2}" y="${topY}" width="${width}" height="8" rx="4" fill="${color}"/>
+    </g>`;
+  }
+
+  function propScaffold(x, topY, bottomY, color) {
+    const rungs = [];
+    for (let ry = topY + 24; ry < bottomY; ry += 46) {
+      rungs.push(`<line x1="${x-9}" y1="${ry}" x2="${x+9}" y2="${ry}" stroke="${color}"/>`);
+    }
+    return `<g stroke-width="4">
+      <line x1="${x - 9}" y1="${topY}" x2="${x - 9}" y2="${bottomY}" stroke="${color}"/>
+      <line x1="${x + 9}" y1="${topY}" x2="${x + 9}" y2="${bottomY}" stroke="${color}"/>
+      ${rungs.join("")}
+    </g>`;
+  }
+
+  function propBench(x, y, padColor, legColor) {
+    return `<g>
+      <rect x="${x}" y="${y - 26}" width="12" height="26" fill="${legColor}"/>
+      <rect x="${x + 54}" y="${y - 26}" width="12" height="26" fill="${legColor}"/>
+      <rect x="${x - 6}" y="${y - 38}" width="78" height="16" rx="6" fill="${padColor}"/>
+    </g>`;
+  }
+
   function roomShell(id, wallUpper, wallLower, trim, tileA, tileB, baseboard, spotColor, spotOpacity, matColor, decorSvg, floorPatternInner, floorTileSize, extraDefs) {
     const tileSize = floorTileSize || 50;
     const floorInner = floorPatternInner || `
@@ -346,6 +394,11 @@
 
       <line x1="356" y1="60" x2="356" y2="150" stroke="#5c5c5c" stroke-width="4"/>
       <rect x="336" y="150" width="40" height="86" rx="18" fill="#d8564a"/>
+
+      ${propScaffold(200, 90, 420, "#7d7166")}
+      ${propBench(148, 470, "#c94f42", "#3a2e26")}
+      ${propTreadmill(104, 560, "#8a8f94", "#4a4a4a")}
+      ${propKettlebells(196, 582, "#2a2a2a", "#3d3d3d")}
     `;
     return roomShell(0, "#ff8a6b", "#2fa89b", "#1c7d73", "#5b6a72", "#66767f", "#2a3338", "#fff3c4", ".55", "#8a3b32", decor);
   }
@@ -393,6 +446,11 @@
       <path d="M348 372 Q345 350 358 336" stroke="#2f8a54" stroke-width="3" fill="none"/>
       <path d="M334 396 L382 396 L376 450 L340 450 Z" fill="#ffffff"/>
       <path d="M334 396 L382 396 L379 408 L337 408 Z" fill="#e8f4fb"/>
+
+      ${propPullBar(210, 40, 90, "#8a97a0")}
+      ${propBench(148, 470, "#3d7fd6", "#c3ccd2")}
+      ${propTreadmill(104, 560, "#eef2f5", "#8a97a0")}
+      ${propKettlebells(196, 582, "#2f4f7a", "#6f8bab")}
     `;
     return roomShell(1, "#eaf4fb", "#6fa8d6", "#ffffff", "#dfe6ea", "#eef2f5", "#4a6f8a", "#eaf6ff", ".5", "#2f6fb0", decor);
   }
@@ -453,6 +511,10 @@
       <circle cx="250" cy="410" r="7" fill="#17151c" stroke="#d4af37" stroke-width="4"/>
       <line x1="250" y1="417" x2="250" y2="450" stroke="#d4af37" stroke-width="4"/>
       <path d="M150 428 Q200 452 250 428" stroke="#7a1f2b" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+      ${propBench(158, 560, "#0d0c11", "#d4af37")}
+      ${propKettlebells(90, 580, "#0d0c11", "#17151c")}
+      ${propTreadmill(268, 560, "#17151c", "#d4af37")}
     `;
     return roomShell(2, "#17151c", "#0d0c11", "#d4af37", "#201e26", "#201e26", "#000000", "#ff9ecf", ".22", "#0d0c11", decor, marbleTile, 100, neonGlow);
   }
@@ -516,6 +578,10 @@
       <g stroke="#f5c518" stroke-width="2.5" fill="none" opacity=".85">
         <path d="M222 52 l10 -4 M224 64 l12 4"/>
       </g>
+
+      <g transform="rotate(14 189 540)">${propBench(150, 560, "#8a3b32", "#5c5c5c")}</g>
+      <g transform="rotate(-6 140 560)">${propTreadmill(96, 560, "#9a9691", "#5c5c5c")}</g>
+      ${propKettlebells(270, 578, "#37576b", "#4d7a4a")}
     `;
     return roomShell(3, "#d8c9a8", "#a89572", "url(#hazard-3)", "#9a9691", "#9a9691", "#3f3a33", "#ffd9a0", ".3", "#8a3b32", decor, concreteTile, 120, hazardTrim);
   }
@@ -582,6 +648,10 @@
       <path d="M336 300 Q328 278 354 270 Q380 278 372 300" fill="none" stroke="${OUTLINE}" stroke-width="4"/>
       <rect x="342" y="340" width="24" height="14" fill="#3a2e6e" stroke="${OUTLINE}" stroke-width="3"/>
       <ellipse cx="354" cy="358" rx="30" ry="7" fill="#17151c" stroke="#ffd700" stroke-width="3"/>
+
+      ${propBench(148, 470, "#3a2e6e", "#ffd700")}
+      ${propTreadmill(104, 560, "#3a2e6e", "#ffd700")}
+      ${propKettlebells(196, 582, "#17151c", "#3a2e6e")}
     `;
     return roomShell(4, "#241b4d", "#150f33", "#ffd700", "#241b4d", "#241b4d", "#0d0a22", "#fff3c4", ".45", "#ffd700", decor, medallionTile, 100, epicGlow);
   }
