@@ -224,6 +224,30 @@
     cursor: pointer;
   }
   button#play-level-btn:hover { filter: brightness(1.08); }
+  button#play-level-btn:disabled {
+    background: var(--panel-light);
+    color: var(--text-dim);
+    cursor: not-allowed;
+    filter: none;
+  }
+
+  #lives-bar { display: flex; align-items: center; gap: 6px; }
+  #lives-bar .heart { font-size: 1.3rem; line-height: 1; filter: grayscale(0); }
+  #lives-bar .heart[data-filled="false"] { filter: grayscale(1); opacity: .35; }
+  #lives-countdown {
+    font-size: .8rem;
+    color: var(--text-dim);
+    min-height: 1.1em;
+  }
+  #no-lives-message {
+    display: none;
+    font-size: .82rem;
+    color: var(--accent-bad);
+    text-align: center;
+    max-width: 90%;
+    margin: 0;
+  }
+  #no-lives-message.show { display: block; }
 </style>
 </head>
 <body>
@@ -233,6 +257,14 @@
       <span>💰</span>
       <span id="money-amount-room">0</span>
     </div>
+    <div id="lives-bar">
+      <span class="heart" data-filled="true">❤️</span>
+      <span class="heart" data-filled="true">❤️</span>
+      <span class="heart" data-filled="true">❤️</span>
+      <span class="heart" data-filled="true">❤️</span>
+      <span class="heart" data-filled="true">❤️</span>
+    </div>
+    <div id="lives-countdown"></div>
     <div class="room-card">
       <div class="room-visual" id="room-visual" data-state="delabre">
         <div class="room-crack"></div>
@@ -250,6 +282,7 @@
       <div class="room-actions">
         <button id="play-level-btn">Jouer un niveau ▶</button>
       </div>
+      <p id="no-lives-message">Aucune vie restante. Prochaine vie dans <strong id="no-lives-timer">--:--</strong>.</p>
     </div>
   </div>
 
@@ -304,6 +337,8 @@
   const TARGET_COUNT = 15;
   const POINTS_PER_TILE = 10;
   const MONEY_PER_WIN = 100;         // pièces gagnées à chaque victoire
+  const MAX_LIVES = 5;
+  const LIFE_REGEN_MS = 20 * 60 * 1000; // 20 minutes par vie, ajustable
   const STORAGE_KEY = "match3-reno-save-v1";
 
   const BOARD_PX = 640;              // taille logique du board (indépendante du DPR)
@@ -345,6 +380,10 @@
   const moneyAmountHudEl = document.getElementById("money-amount-hud");
   const roomVisualEl = document.getElementById("room-visual");
   const roomStateLabelEl = document.getElementById("room-state-label");
+  const heartEls = Array.from(document.querySelectorAll("#lives-bar .heart"));
+  const livesCountdownEl = document.getElementById("lives-countdown");
+  const noLivesMessageEl = document.getElementById("no-lives-message");
+  const noLivesTimerEl = document.getElementById("no-lives-timer");
 
   function setupCanvasResolution() {
     const dpr = window.devicePixelRatio || 1;
@@ -372,6 +411,12 @@
   let money = 0;
   let roomRenovated = false; // réservé à la mécanique de rénovation (bouton à venir)
 
+  // Vies : nextLifeAt est l'horodatage (ms) auquel la PROCHAINE vie manquante sera
+  // accordée. Une seule minuterie à la fois tourne (pas une par vie manquante) -
+  // dès qu'elle accorde une vie, elle se relance pour la suivante si besoin.
+  let lives = MAX_LIVES;
+  let nextLifeAt = null;
+
   function loadSave() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -379,6 +424,8 @@
       const data = JSON.parse(raw);
       if (typeof data.money === "number") money = data.money;
       if (typeof data.roomRenovated === "boolean") roomRenovated = data.roomRenovated;
+      if (typeof data.lives === "number") lives = data.lives;
+      if (typeof data.nextLifeAt === "number") nextLifeAt = data.nextLifeAt;
     } catch (e) {
       // sauvegarde corrompue ou stockage indisponible : on repart de zéro
     }
@@ -386,10 +433,61 @@
 
   function saveGame() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ money, roomRenovated }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ money, roomRenovated, lives, nextLifeAt }));
     } catch (e) {
       // stockage indisponible (mode privé, quota...) : on continue sans persister
     }
+  }
+
+  // Accorde toute vie gagnée pendant que la page était fermée/inactive (peut en
+  // accorder plusieurs d'un coup si le délai cumulé le permet).
+  function reconcileLives() {
+    if (nextLifeAt === null) return;
+    const nowTs = Date.now();
+    let changed = false;
+    while (nextLifeAt !== null && lives < MAX_LIVES && nowTs >= nextLifeAt) {
+      lives++;
+      nextLifeAt = lives < MAX_LIVES ? nextLifeAt + LIFE_REGEN_MS : null;
+      changed = true;
+    }
+    if (changed) saveGame();
+  }
+
+  function loseLife() {
+    if (lives <= 0) return;
+    lives--;
+    if (nextLifeAt === null) nextLifeAt = Date.now() + LIFE_REGEN_MS;
+    saveGame();
+    updateLivesDisplay();
+  }
+
+  function formatCountdown(ms) {
+    const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }
+
+  function updateLivesDisplay() {
+    heartEls.forEach((el, i) => { el.dataset.filled = i < lives ? "true" : "false"; });
+
+    if (lives < MAX_LIVES && nextLifeAt !== null) {
+      const remaining = formatCountdown(nextLifeAt - Date.now());
+      livesCountdownEl.textContent = `Prochaine vie dans ${remaining}`;
+      if (lives <= 0) {
+        noLivesTimerEl.textContent = remaining;
+      }
+    } else {
+      livesCountdownEl.textContent = "";
+    }
+
+    noLivesMessageEl.classList.toggle("show", lives <= 0);
+    playLevelBtn.disabled = lives <= 0;
+  }
+
+  function tickLives() {
+    reconcileLives();
+    updateLivesDisplay();
   }
 
   function updateMoneyDisplay() {
@@ -682,6 +780,7 @@
       showOverlay("Victoire !", `Objectif atteint : ${TARGET_COUNT} ${SYMBOLS[TARGET_SYMBOL_INDEX]} collectés en ${MAX_MOVES - movesLeft} mouvements. Score : ${score}. +${MONEY_PER_WIN} 💰`);
     } else if (movesLeft <= 0) {
       gameOver = true;
+      loseLife();
       showOverlay("Défaite", `Mouvements épuisés. ${collected}/${TARGET_COUNT} ${SYMBOLS[TARGET_SYMBOL_INDEX]} collectés. Score : ${score}.`);
     }
   }
@@ -874,6 +973,7 @@
   restartBtn.addEventListener("click", resetGame);
   backToRoomBtn.addEventListener("click", () => showScreen("room"));
   playLevelBtn.addEventListener("click", () => {
+    if (lives <= 0) return; // défense en profondeur - le bouton est déjà désactivé
     showScreen("puzzle");
     resetGame();
   });
@@ -882,11 +982,14 @@
   // Démarrage
   // ---------------------------------------------------------------------
   loadSave();
+  reconcileLives(); // rattrape les vies gagnées pendant que la page était fermée
   updateMoneyDisplay();
+  updateLivesDisplay();
   applyRoomVisual();
   resetGame();
   showScreen("room");
   loop();
+  setInterval(tickLives, 1000);
 })();
 </script>
 </body>
