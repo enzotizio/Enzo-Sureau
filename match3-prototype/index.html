@@ -137,7 +137,7 @@
     font-weight: 700;
     font-size: 1.1rem;
   }
-  .room-card {
+  .play-panel {
     width: 100%;
     background: var(--panel);
     border-radius: 16px;
@@ -148,71 +148,70 @@
     align-items: center;
     gap: 14px;
   }
-  .room-visual {
+  .room-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+  /* Vue isométrique multi-zones */
+  .zones-strip {
+    width: 100%;
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    padding: 10px 4px 18px;
+    scroll-snap-type: x proximity;
+  }
+  .iso-zone {
+    position: relative;
+    flex: 0 0 auto;
+    width: 148px;
+    scroll-snap-align: start;
+    cursor: pointer;
+  }
+  .iso-zone:active { transform: scale(.97); }
+  .iso-shape {
     position: relative;
     width: 100%;
-    aspect-ratio: 4 / 3;
-    border-radius: 14px;
-    overflow: hidden;
+    aspect-ratio: 1 / 1.05;
+    clip-path: polygon(28% 0%, 100% 12%, 72% 100%, 0% 88%);
     background: linear-gradient(160deg, #4a4238, #302a24);
-    transition: background 500ms ease;
+    overflow: hidden;
+    transition: background 500ms ease, filter 400ms ease;
+    box-shadow: 0 8px 20px rgba(0,0,0,.35);
   }
-  .room-visual[data-state="renove"] { background: linear-gradient(160deg, #2d3f4a, #1c2a33); }
-  .room-crack {
+  .iso-zone[data-state="renove"] .iso-shape { background: linear-gradient(160deg, #2d3f4a, #1c2a33); }
+  .iso-zone[data-state="locked"] .iso-shape { background: linear-gradient(160deg, #2a2d36, #1a1c22); filter: grayscale(.7) brightness(.65); }
+  .iso-icon {
     position: absolute;
-    width: 55%;
-    height: 2px;
-    background: rgba(0,0,0,.35);
-    top: 30%;
-    left: 10%;
-    transform: rotate(12deg);
-    transition: opacity 300ms ease;
+    top: 48%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.1rem;
+    opacity: .9;
   }
-  .room-crack-2 { top: 62%; left: 35%; width: 38%; transform: rotate(-18deg); }
-  .room-visual[data-state="renove"] .room-crack { opacity: 0; }
-  .room-lockers {
+  .iso-zone[data-state="locked"] .iso-icon { opacity: .25; filter: grayscale(1); }
+  .iso-lock {
     position: absolute;
-    bottom: 16%;
-    left: 8%;
-    right: 8%;
-    display: flex;
-    gap: 8px;
-    justify-content: center;
+    top: 12px;
+    right: 18px;
+    font-size: 1.15rem;
   }
-  .locker {
-    width: 15%;
-    aspect-ratio: 1 / 2.2;
-    background: #6b5a45;
-    border-radius: 3px;
-    transform: rotate(-2deg);
-    box-shadow: inset 0 0 0 2px rgba(0,0,0,.25);
-    transition: background 500ms ease, transform 500ms ease, box-shadow 500ms ease;
+  .iso-info { margin-top: 8px; text-align: center; }
+  .iso-zone-name { font-size: .8rem; font-weight: 700; }
+  .iso-zone-status { font-size: .7rem; color: var(--text-dim); margin-top: 2px; }
+  .iso-zone[data-state="locked"] .iso-zone-status { color: var(--accent-warn); font-weight: 600; }
+  .iso-zone.shake { animation: iso-shake 400ms ease; }
+  @keyframes iso-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
   }
-  .locker:nth-child(2) { transform: rotate(1deg); }
-  .locker:nth-child(3) { transform: rotate(-1deg); }
-  .locker:nth-child(4) { transform: rotate(2deg); }
-  .room-visual[data-state="renove"] .locker {
-    background: #4fd1c5;
-    transform: none;
-    box-shadow: inset 0 0 0 2px rgba(255,255,255,.25);
+  .iso-zone.unlocking .iso-shape { animation: iso-unlock 650ms ease; }
+  @keyframes iso-unlock {
+    0% { filter: grayscale(.7) brightness(.65); }
+    45% { filter: grayscale(0) brightness(1.5); }
+    100% { filter: grayscale(0) brightness(1); }
   }
-  .room-cobweb, .room-puddle {
-    position: absolute;
-    transition: opacity 300ms ease;
-  }
-  .room-cobweb { top: 8px; right: 10px; font-size: 1.4rem; opacity: .8; filter: grayscale(.3); }
-  .room-puddle { bottom: 6%; left: 12%; font-size: 1.1rem; opacity: .7; }
-  .room-visual[data-state="renove"] .room-cobweb,
-  .room-visual[data-state="renove"] .room-puddle { opacity: 0; }
-  .room-label {
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    padding: 6px 10px;
-    background: rgba(10,12,18,.55);
-    font-size: .78rem;
-    text-align: center;
-  }
-  .room-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
   button#play-level-btn {
     background: var(--accent);
     border: none;
@@ -265,20 +264,10 @@
       <span class="heart" data-filled="true">❤️</span>
     </div>
     <div id="lives-countdown"></div>
-    <div class="room-card">
-      <div class="room-visual" id="room-visual" data-state="delabre">
-        <div class="room-crack"></div>
-        <div class="room-crack room-crack-2"></div>
-        <div class="room-lockers">
-          <span class="locker"></span>
-          <span class="locker"></span>
-          <span class="locker"></span>
-          <span class="locker"></span>
-        </div>
-        <div class="room-cobweb">🕸️</div>
-        <div class="room-puddle">💧</div>
-        <div class="room-label">Vestiaire — <span id="room-state-label">délabré</span></div>
-      </div>
+
+    <div id="zones-strip" class="zones-strip"></div>
+
+    <div class="play-panel">
       <div class="room-actions">
         <button id="play-level-btn">Jouer un niveau ▶</button>
       </div>
@@ -341,6 +330,13 @@
   const LIFE_REGEN_MS = 20 * 60 * 1000; // 20 minutes par vie, ajustable
   const STORAGE_KEY = "match3-reno-save-v1";
 
+  // Zones de la salle (vue isométrique). La zone 0 (vestiaire) est débloquée d'office.
+  const ZONES = [
+    { id: 0, name: "Vestiaire", icon: "🧥", unlockPrice: 0 },
+    { id: 1, name: "Zone Musculation", icon: "🏋️", unlockPrice: 2000 },
+    { id: 2, name: "Zone Cardio", icon: "🏃", unlockPrice: 2000 },
+  ];
+
   const BOARD_PX = 640;              // taille logique du board (indépendante du DPR)
   const CELL = BOARD_PX / GRID_SIZE;
 
@@ -378,8 +374,7 @@
   const playLevelBtn = document.getElementById("play-level-btn");
   const moneyAmountRoomEl = document.getElementById("money-amount-room");
   const moneyAmountHudEl = document.getElementById("money-amount-hud");
-  const roomVisualEl = document.getElementById("room-visual");
-  const roomStateLabelEl = document.getElementById("room-state-label");
+  const zonesStripEl = document.getElementById("zones-strip");
   const heartEls = Array.from(document.querySelectorAll("#lives-bar .heart"));
   const livesCountdownEl = document.getElementById("lives-countdown");
   const noLivesMessageEl = document.getElementById("no-lives-message");
@@ -409,7 +404,12 @@
 
   // Progression de la salle (persistée) - money gagné au Match-3, dépensé en rénovation.
   let money = 0;
-  let roomRenovated = false; // réservé à la mécanique de rénovation (bouton à venir)
+  // État de chaque zone, index-aligné avec ZONES : "locked" | "delabre" | "renove".
+  let zoneStates = null;
+
+  function defaultZoneStates() {
+    return ZONES.map((z, i) => (i === 0 ? "delabre" : "locked"));
+  }
 
   // Vies : nextLifeAt est l'horodatage (ms) auquel la PROCHAINE vie manquante sera
   // accordée. Une seule minuterie à la fois tourne (pas une par vie manquante) -
@@ -418,14 +418,21 @@
   let nextLifeAt = null;
 
   function loadSave() {
+    zoneStates = defaultZoneStates();
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const data = JSON.parse(raw);
       if (typeof data.money === "number") money = data.money;
-      if (typeof data.roomRenovated === "boolean") roomRenovated = data.roomRenovated;
       if (typeof data.lives === "number") lives = data.lives;
       if (typeof data.nextLifeAt === "number") nextLifeAt = data.nextLifeAt;
+
+      if (Array.isArray(data.zoneStates) && data.zoneStates.length === ZONES.length) {
+        zoneStates = data.zoneStates;
+      } else if (typeof data.roomRenovated === "boolean") {
+        // Migration depuis l'ancienne sauvegarde à une seule pièce (avant la vue multi-zones).
+        zoneStates[0] = data.roomRenovated ? "renove" : "delabre";
+      }
     } catch (e) {
       // sauvegarde corrompue ou stockage indisponible : on repart de zéro
     }
@@ -433,7 +440,7 @@
 
   function saveGame() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ money, roomRenovated, lives, nextLifeAt }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ money, lives, nextLifeAt, zoneStates }));
     } catch (e) {
       // stockage indisponible (mode privé, quota...) : on continue sans persister
     }
@@ -495,9 +502,78 @@
     moneyAmountHudEl.textContent = `💰 ${money}`;
   }
 
-  function applyRoomVisual() {
-    roomVisualEl.dataset.state = roomRenovated ? "renove" : "delabre";
-    roomStateLabelEl.textContent = roomRenovated ? "rénové" : "délabré";
+  function zoneStatusLabel(zone, state) {
+    if (state === "locked") return `Débloquer : ${zone.unlockPrice} 💰`;
+    return state === "renove" ? "rénové" : "délabré";
+  }
+
+  function renderZones() {
+    zonesStripEl.innerHTML = "";
+    ZONES.forEach((zone, i) => {
+      const state = zoneStates[i];
+
+      const el = document.createElement("div");
+      el.className = "iso-zone";
+      el.dataset.state = state;
+
+      const shape = document.createElement("div");
+      shape.className = "iso-shape";
+
+      const icon = document.createElement("div");
+      icon.className = "iso-icon";
+      icon.textContent = zone.icon;
+      shape.appendChild(icon);
+
+      if (state === "locked") {
+        const lock = document.createElement("div");
+        lock.className = "iso-lock";
+        lock.textContent = "🔒";
+        shape.appendChild(lock);
+      }
+      el.appendChild(shape);
+
+      const info = document.createElement("div");
+      info.className = "iso-info";
+      const nameEl = document.createElement("div");
+      nameEl.className = "iso-zone-name";
+      nameEl.textContent = zone.name;
+      const statusEl = document.createElement("div");
+      statusEl.className = "iso-zone-status";
+      statusEl.textContent = zoneStatusLabel(zone, state);
+      info.appendChild(nameEl);
+      info.appendChild(statusEl);
+      el.appendChild(info);
+
+      el.addEventListener("click", () => onZoneClick(i));
+      zonesStripEl.appendChild(el);
+    });
+  }
+
+  function onZoneClick(index) {
+    const zone = ZONES[index];
+    if (zoneStates[index] !== "locked") return; // rénovation par zone : prochaine étape
+
+    const el = zonesStripEl.children[index];
+    if (money < zone.unlockPrice) {
+      if (el) {
+        el.classList.remove("shake");
+        void el.offsetWidth; // force le reflow pour pouvoir rejouer l'animation
+        el.classList.add("shake");
+        setTimeout(() => el.classList.remove("shake"), 400);
+      }
+      return;
+    }
+
+    money -= zone.unlockPrice;
+    zoneStates[index] = "delabre";
+    saveGame();
+    updateMoneyDisplay();
+    renderZones();
+    const newEl = zonesStripEl.children[index];
+    if (newEl) {
+      newEl.classList.add("unlocking");
+      setTimeout(() => newEl.classList.remove("unlocking"), 650);
+    }
   }
 
   function showScreen(name) {
@@ -985,7 +1061,7 @@
   reconcileLives(); // rattrape les vies gagnées pendant que la page était fermée
   updateMoneyDisplay();
   updateLivesDisplay();
-  applyRoomVisual();
+  renderZones();
   resetGame();
   showScreen("room");
   loop();
