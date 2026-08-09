@@ -929,6 +929,26 @@
     }
   }
 
+  // Les glyphes emoji couleur ont des boîtes de rendu très inégales (🏋️ n'occupe pas du
+  // tout le même espace visuel que 🥤 ou 👟) : centrer avec un textBaseline générique
+  // laisse chaque symbole décalé différemment. On mesure la boîte englobante réelle de
+  // chaque symbole une fois (mise en cache) et on corrige le point de dessin en
+  // conséquence, plutôt que de supposer un décalage unique valable pour tous.
+  const symbolOffsetCache = new Map();
+  function getSymbolOffset(index) {
+    if (symbolOffsetCache.has(index)) return symbolOffsetCache.get(index);
+    const m = ctx.measureText(SYMBOLS[index]);
+    const hasBounds = typeof m.actualBoundingBoxLeft === "number" && typeof m.actualBoundingBoxAscent === "number";
+    const offset = hasBounds
+      ? {
+          x: (m.actualBoundingBoxLeft - m.actualBoundingBoxRight) / 2,
+          y: (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2,
+        }
+      : { x: 0, y: 1 }; // repli si actualBoundingBox* n'est pas supporté
+    symbolOffsetCache.set(index, offset);
+    return offset;
+  }
+
   function draw() {
     ctx.clearRect(0, 0, BOARD_PX, BOARD_PX);
 
@@ -957,13 +977,14 @@
     ctx.font = `${fontSize}px sans-serif`;
     for (const t of tiles) {
       if (t.removing && t.alpha <= 0) continue;
+      const glyphOffset = getSymbolOffset(t.symbolIndex);
       ctx.save();
       ctx.globalAlpha = t.alpha;
       const cx = t.x + CELL / 2;
       const cy = t.y + CELL / 2;
       ctx.translate(cx, cy);
       ctx.scale(t.scale, t.scale);
-      ctx.fillText(SYMBOLS[t.symbolIndex], 0, 1);
+      ctx.fillText(SYMBOLS[t.symbolIndex], glyphOffset.x, glyphOffset.y);
       ctx.restore();
     }
   }
