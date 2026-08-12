@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import QuoteForm from "@/components/devis/QuoteForm";
 import SectionHeading from "@/components/SectionHeading";
 import { siteConfig } from "@/lib/site-config";
 
@@ -12,34 +13,20 @@ export default function DevisPage() {
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-20">
       <SectionHeading
         eyebrow="Devis"
-        title="Le formulaire de devis en ligne arrive bientôt"
-        description="Nous mettons actuellement en place un formulaire guidé en plusieurs étapes (type de travaux, photos, budget, coordonnées) pour vous permettre d'obtenir un devis chiffré rapidement."
+        title="Demandez votre devis gratuit"
+        description="Quelques étapes simples pour nous transmettre toutes les infos utiles à un chiffrage rapide et précis."
       />
 
-      <div className="mt-10 rounded-2xl border border-emerald-900/10 bg-white p-8">
-        <h2 className="text-lg font-semibold text-stone-900">
-          En attendant, contactez-nous directement
-        </h2>
-        <p className="mt-2 text-stone-600">
-          Décrivez-nous votre projet par téléphone ou par email — nous revenons vers
-          vous rapidement avec les informations nécessaires à l&apos;établissement de
-          votre devis.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-4">
-          <a
-            href={`tel:${siteConfig.phoneHref}`}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-800 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-900"
-          >
-            {siteConfig.phone}
-          </a>
-          <a
-            href={`mailto:${siteConfig.email}`}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-emerald-900 ring-1 ring-inset ring-emerald-800/30 hover:bg-emerald-50"
-          >
-            {siteConfig.email}
-          </a>
-        </div>
+      <div className="mt-10">
+        <QuoteForm />
       </div>
+
+      <p className="mt-8 text-center text-sm text-stone-500">
+        Vous préférez nous appeler directement ?{" "}
+        <a href={`tel:${siteConfig.phoneHref}`} className="font-semibold text-emerald-800 hover:underline">
+          {siteConfig.phone}
+        </a>
+      </p>
     </div>
   );
 }
