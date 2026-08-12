@@ -32,19 +32,37 @@ Le cahier des charges complet et sa version simplifiée sont dans `docs/`.
   affiche un message clair avec le téléphone de secours plutôt que d'échouer
   silencieusement
 
+### Couche 3 (terminée) — Backend & espace admin
+
+- Schéma Supabase (`supabase/schema.sql`) : table `devis_requests` (statut
+  nouveau/contacté/devis envoyé/accepté/refusé, notes internes) + bucket de
+  stockage privé `devis-photos`. RLS activée, aucune policy publique — tout
+  accès passe par la clé service role, côté serveur uniquement
+- `POST /api/devis` enregistre désormais la demande en base et upload les
+  photos vers Supabase Storage (`src/lib/devis-requests.ts`) ; l'email de
+  notification pointe vers la fiche admin plutôt que de joindre les photos
+  en base64 (si Supabase n'est pas configuré, on retombe sur le
+  comportement Couche 2 avec pièces jointes)
+- Espace admin protégé par Supabase Auth (`src/app/admin/`), route
+  `/admin/login` + `src/proxy.ts` (le `middleware.ts` de Next 16 a été
+  renommé `proxy.ts`) qui redirige tout accès non authentifié
+- Dashboard `/admin` : liste des demandes avec filtres (statut, prestation)
+- Détail `/admin/[id]` : récapitulatif complet, photos (URLs signées,
+  valables 7 jours), changement de statut et notes internes (Server Actions)
+- Export CSV (`/api/admin/export`, protégé) depuis le dashboard
+
 **Non fait volontairement** (couches suivantes, à valider avant de démarrer) :
 
-- Couche 3 — Supabase (DB, auth admin, storage), espace admin de suivi des
-  devis ; pour l'instant, les demandes ne sont **pas** enregistrées en base,
-  seulement transmises par email
 - Couche 4 — galerie réalisations filtrable, blog, contenu SEO local avancé
 - Couche 5 — prise de RDV en ligne, avis clients automatisés
 
-## Configuration requise pour le formulaire de devis
+## Configuration requise
 
-Voir `.env.example`. Sans ces variables, le formulaire reste pleinement
-utilisable (validation, compression photo) mais l'envoi final échoue avec un
-message invitant à appeler directement :
+Voir `.env.example`. Sans ces variables, le site reste pleinement
+fonctionnel en dégradé : le formulaire de devis marche (validation,
+compression photo) mais l'envoi final échoue avec un message invitant à
+appeler directement, et l'espace admin affiche un message "pas encore
+configuré" plutôt qu'un formulaire de connexion cassé.
 
 - `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME` — envoi des
   emails de confirmation/notification
@@ -52,6 +70,9 @@ message invitant à appeler directement :
   (par défaut `siteConfig.email`)
 - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` — autocomplétion d'adresse (optionnel,
   champ texte simple sinon)
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+  `SUPABASE_SERVICE_ROLE_KEY` — backend + espace admin (voir
+  `supabase/schema.sql` pour l'initialisation et la création du compte admin)
 
 ## À compléter avant mise en ligne
 

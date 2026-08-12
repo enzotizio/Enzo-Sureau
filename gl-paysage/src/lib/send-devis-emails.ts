@@ -112,9 +112,18 @@ export async function sendClientConfirmationEmail(data: DevisFormData) {
   });
 }
 
-export async function sendBusinessNotificationEmail(data: DevisFormData) {
+export async function sendBusinessNotificationEmail(
+  data: DevisFormData,
+  options: { adminLink?: string } = {},
+) {
   const sender = senderInfo();
   const notificationEmail = process.env.DEVIS_NOTIFICATION_EMAIL || siteConfig.email;
+
+  // Si la demande a été enregistrée (Couche 3 / Supabase configuré), les
+  // photos sont déjà stockées et consultables depuis l'espace admin : on
+  // évite de les joindre en base64 et on renvoie simplement vers la fiche.
+  // Sinon (pas encore de backend), on les joint directement à l'email.
+  const useAdminLink = Boolean(options.adminLink);
 
   await sendBrevoEmail({
     sender,
@@ -126,15 +135,19 @@ export async function sendBusinessNotificationEmail(data: DevisFormData) {
         <p>Nouvelle demande de devis reçue via le site.</p>
         ${recapHtml(data)}
         ${
-          data.photos.length > 0
-            ? `<p style="margin-top:16px;">${data.photos.length} photo(s) jointe(s) à cet email.</p>`
-            : `<p style="margin-top:16px;">Aucune photo jointe.</p>`
+          useAdminLink
+            ? `<p style="margin-top:16px;"><a href="${options.adminLink}" style="display:inline-block;background:#065f46;color:#fff;padding:10px 20px;border-radius:999px;text-decoration:none;">Voir la demande complète${data.photos.length > 0 ? ` (${data.photos.length} photo(s))` : ""}</a></p>`
+            : data.photos.length > 0
+              ? `<p style="margin-top:16px;">${data.photos.length} photo(s) jointe(s) à cet email.</p>`
+              : `<p style="margin-top:16px;">Aucune photo jointe.</p>`
         }
       </div>
     `,
-    attachment: data.photos.map((photo, index) => ({
-      name: photo.name || `photo-${index + 1}.jpg`,
-      content: photo.dataUrl.split(",")[1] ?? "",
-    })),
+    attachment: useAdminLink
+      ? undefined
+      : data.photos.map((photo, index) => ({
+          name: photo.name || `photo-${index + 1}.jpg`,
+          content: photo.dataUrl.split(",")[1] ?? "",
+        })),
   });
 }

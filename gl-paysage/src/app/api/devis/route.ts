@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { devisSchema } from "@/lib/devis-schema";
+import { insertDevisRequest } from "@/lib/devis-requests";
 import { sendBusinessNotificationEmail, sendClientConfirmationEmail } from "@/lib/send-devis-emails";
+import { siteConfig } from "@/lib/site-config";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -25,10 +27,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
+  // Enregistrement en base (Couche 3). Ne bloque jamais l'envoi des emails :
+  // si Supabase n'est pas configuré ou que l'insertion échoue, on retombe
+  // sur le comportement de la Couche 2 (photos jointes directement à l'email).
+  const saved = await insertDevisRequest(data);
+  const adminLink = saved ? `${siteConfig.url}/admin/${saved.id}` : undefined;
+
   try {
     await Promise.all([
       sendClientConfirmationEmail(data),
-      sendBusinessNotificationEmail(data),
+      sendBusinessNotificationEmail(data, { adminLink }),
     ]);
   } catch (error) {
     console.error("Échec de l'envoi des emails de devis :", error);
