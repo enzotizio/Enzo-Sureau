@@ -10,22 +10,20 @@ export default function MentionsLegalesPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-20">
       <h1 className="text-3xl font-semibold text-stone-900">Mentions légales</h1>
-      <p className="mt-4 text-sm text-stone-500">
-        Page en cours de finalisation — les informations marquées « à compléter »
-        doivent être renseignées avant la mise en ligne du site.
-      </p>
-
       <div className="mt-8 flex flex-col gap-8 text-stone-700">
         <section>
           <h2 className="text-xl font-semibold text-stone-900">Éditeur du site</h2>
           <ul className="mt-3 space-y-1">
             <li>Nom commercial : {siteConfig.name}</li>
+            <li>Nom du dirigeant : {siteConfig.legal.directorName}</li>
             <li>Forme juridique : {siteConfig.legalStatus}</li>
-            <li>SIRET : à compléter</li>
-            <li>Adresse du siège : à compléter</li>
+            <li>SIREN : {siteConfig.legal.siren}</li>
+            <li>SIRET : {siteConfig.legal.siret}</li>
+            <li>Numéro de TVA intracommunautaire : {siteConfig.legal.vatNumber}</li>
+            <li>Adresse du siège : {siteConfig.legal.address}</li>
             <li>Téléphone : {siteConfig.phone}</li>
             <li>Email : {siteConfig.email}</li>
-            <li>Directeur de la publication : à compléter</li>
+            <li>Directeur de la publication : {siteConfig.legal.directorName}</li>
           </ul>
         </section>
 
