@@ -6,11 +6,11 @@ export const siteConfig = {
   tagline: "Création et entretien de jardins en Aube, Yonne et Seine-et-Marne",
   description:
     "GL Paysage, entreprise de paysagisme intervenant en Aube (10), Yonne (89) et Seine-et-Marne (77) : création de jardins, entretien, tonte, élagage, clôtures, terrasses et arrosage automatique.",
-  // TODO: nom de domaine définitif à définir puis à renseigner ici et dans metadataBase (layout.tsx)
-  url: "https://www.gl-paysage.fr",
-  phone: "06 00 00 00 00", // TODO: remplacer par le vrai numéro
-  phoneHref: "+33600000000", // TODO: remplacer par le vrai numéro au format international
-  email: "contact@gl-paysage.fr", // TODO: remplacer par la vraie adresse email
+  url: "https://www.glpaysage.com",
+  phone: "06 47 15 70 52",
+  phoneHref: "+33647157052",
+  // TODO: remplacer par une adresse @glpaysage.com une fois la messagerie du domaine configurée
+  email: "glpaysage10@gmail.com",
   legalStatus: "Entreprise individuelle",
   zones: ["Aube (10)", "Yonne (89)", "Seine-et-Marne (77)"],
   socials: {
